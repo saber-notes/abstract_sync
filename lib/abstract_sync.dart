@@ -1,8 +1,5 @@
-/// Support for doing something awesome.
-///
-/// More dartdocs go here.
-library;
-
-export 'src/abstract_sync_base.dart';
-
-// TODO: Export any libraries intended for clients of this package.
+export 'src/abstract_sync_interface.dart';
+export 'src/sync_file.dart';
+export 'src/syncer_downloader.dart';
+export 'src/syncer_uploader.dart';
+export 'src/syncer.dart';
