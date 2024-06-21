@@ -5,10 +5,12 @@ import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 
 final class SyncerDownloader<
-        SyncInterface extends AbstractSyncInterface<RemoteFile, SyncFile>,
-        SyncFile extends AbstractSyncFile<RemoteFile>,
+        SyncInterface extends AbstractSyncInterface<SyncFile, LocalFile,
+            RemoteFile>,
+        SyncFile extends AbstractSyncFile<LocalFile, RemoteFile>,
+        LocalFile extends Object,
         RemoteFile extends Object>
-    extends SyncerComponent<SyncInterface, SyncFile, RemoteFile> {
+    extends SyncerComponent<SyncInterface, SyncFile, LocalFile, RemoteFile> {
   SyncerDownloader({
     required super.syncer,
     required super.pending,
@@ -29,6 +31,11 @@ final class SyncerDownloader<
   @override
   @protected
   Future<void> transfer(SyncFile file) async {
-    await syncer.interface.downloadFile(file);
+    final downloadedBytes = await syncer.remoteMutex.protect(
+      () => syncer.interface.downloadRemoteFile(file.remoteFile),
+    );
+    await syncer.localMutex.protect(
+      () => syncer.interface.writeLocalFile(file.localFile, downloadedBytes),
+    );
   }
 }

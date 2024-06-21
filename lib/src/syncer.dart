@@ -7,8 +7,10 @@ import 'package:mutex/mutex.dart';
 
 @immutable
 final class Syncer<
-    SyncInterface extends AbstractSyncInterface<RemoteFile, SyncFile>,
-    SyncFile extends AbstractSyncFile<RemoteFile>,
+    SyncInterface extends AbstractSyncInterface<SyncFile, LocalFile,
+        RemoteFile>,
+    SyncFile extends AbstractSyncFile<LocalFile, RemoteFile>,
+    LocalFile extends Object,
     RemoteFile extends Object> {
   Syncer(
     this.interface, {
@@ -19,16 +21,20 @@ final class Syncer<
 
   final SyncInterface interface;
 
-  /// Mutex to prevent concurrent network operations.
+  /// Mutex to prevent concurrent remote operations.
   @internal
-  final networkMutex = Mutex();
+  final remoteMutex = Mutex();
+
+  /// Mutex to prevent concurrent local operations.
+  @internal
+  final localMutex = Mutex();
 
   final Set<SyncFile> _uploadQueue, _downloadQueue;
-  late final uploader = SyncerUploader<SyncInterface, SyncFile, RemoteFile>(
+  late final uploader = SyncerUploader(
     syncer: this,
     pending: _uploadQueue,
   );
-  late final downloader = SyncerDownloader<SyncInterface, SyncFile, RemoteFile>(
+  late final downloader = SyncerDownloader(
     syncer: this,
     pending: _downloadQueue,
   );

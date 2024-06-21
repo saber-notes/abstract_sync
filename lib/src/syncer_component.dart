@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:async';
 
 import 'package:abstract_sync/src/abstract_sync_interface.dart';
 import 'package:abstract_sync/src/sync_file.dart';
@@ -7,8 +7,10 @@ import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 
 abstract class SyncerComponent<
-    SyncInterface extends AbstractSyncInterface<RemoteFile, SyncFile>,
-    SyncFile extends AbstractSyncFile<RemoteFile>,
+    SyncInterface extends AbstractSyncInterface<SyncFile, LocalFile,
+        RemoteFile>,
+    SyncFile extends AbstractSyncFile<LocalFile, RemoteFile>,
+    LocalFile extends Object,
     RemoteFile extends Object> with ChangeNotifier {
   SyncerComponent({
     required this.syncer,
@@ -16,7 +18,7 @@ abstract class SyncerComponent<
     required this.log,
   });
 
-  final Syncer<SyncInterface, SyncFile, RemoteFile> syncer;
+  final Syncer<SyncInterface, SyncFile, LocalFile, RemoteFile> syncer;
 
   @protected
   final Set<SyncFile> pending;
@@ -24,19 +26,19 @@ abstract class SyncerComponent<
   final Logger log;
 
   bool isPending(SyncFile file) => pending.contains(file);
-  bool isLocalFilePending(File file) =>
-      pending.any((element) => element.localFile.path == file.path);
+  bool isLocalFilePending(LocalFile file) => pending.any((element) =>
+      syncer.interface.areLocalFilesEqual(element.localFile, file));
   bool isRemoteFilePending(RemoteFile file) => pending.any((element) =>
       syncer.interface.areRemoteFilesEqual(element.remoteFile, file));
 
   /// Adds a file to the queue, if it is not already pending.
   ///
   /// Returns `true` if the file was newly added to the queue.
-  bool enqueue({
+  Future<bool> enqueue({
     SyncFile? syncFile,
-    File? localFile,
+    LocalFile? localFile,
     RemoteFile? remoteFile,
-  }) {
+  }) async {
     assert(syncFile != null || localFile != null || remoteFile != null,
         'One of syncFile, localFile, or remoteFile must be provided.');
 
@@ -45,14 +47,14 @@ abstract class SyncerComponent<
         (remoteFile != null && isRemoteFilePending(remoteFile))) return false;
 
     syncFile ??= localFile != null
-        ? syncer.interface.getSyncFileFromLocalFile(localFile)
-        : syncer.interface.getSyncFileFromRemoteFile(remoteFile!);
+        ? await syncer.interface.getSyncFileFromLocalFile(localFile)
+        : await syncer.interface.getSyncFileFromRemoteFile(remoteFile!);
 
     // If the file is already pending, don't add it again.
     if (!pending.add(syncFile)) return false;
     notifyListeners();
 
-    syncer.networkMutex.protect(() => _transferWrapper(syncFile!));
+    await _transferWrapper(syncFile);
 
     return true;
   }
@@ -62,16 +64,17 @@ abstract class SyncerComponent<
   /// Returns `true` if the file was removed from the queue.
   bool dequeue({
     SyncFile? syncFile,
-    File? localFile,
+    LocalFile? localFile,
     RemoteFile? remoteFile,
   }) {
     assert(syncFile != null || localFile != null || remoteFile != null,
         'One of syncFile, localFile, or remoteFile must be provided.');
 
     syncFile ??= pending.castNullable().firstWhere(
-          (syncFile) => localFile != null
-              ? syncFile!.localFile.path == localFile.path
-              : syncer.interface
+          localFile != null
+              ? (syncFile) => syncer.interface
+                  .areLocalFilesEqual(syncFile!.localFile, localFile)
+              : (syncFile) => syncer.interface
                   .areRemoteFilesEqual(syncFile!.remoteFile, remoteFile!),
           orElse: () => null,
         );
@@ -91,8 +94,8 @@ abstract class SyncerComponent<
     } catch (e, st) {
       // If the transfer failed, re-enqueue the file.
       log.warning('Transfer failed: $e', e, st);
-      syncer.networkMutex.protect(() => _transferWrapper(file));
-      return;
+      pending.remove(file);
+      enqueue(syncFile: file);
     }
 
     // File was successfully transferred.

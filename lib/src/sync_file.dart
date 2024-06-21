@@ -1,25 +1,26 @@
-import 'dart:io';
-
 import 'package:meta/meta.dart';
 
-abstract class AbstractSyncFile<RemoteFile extends Object> {
+abstract class AbstractSyncFile<LocalFile extends Object,
+    RemoteFile extends Object> {
   AbstractSyncFile({
     required this.remoteFile,
     required this.localFile,
   });
 
   final RemoteFile remoteFile;
-  final File localFile;
+  final LocalFile localFile;
 
   @override
   @mustBeOverridden
   String toString() => 'AbstractSyncFile<$RemoteFile>($localFile)';
 
   @override
+  @mustBeOverridden
   bool operator ==(Object other) =>
-      other is AbstractSyncFile<RemoteFile> &&
-      other.localFile.path == localFile.path;
+      other is AbstractSyncFile<LocalFile, RemoteFile> &&
+      other.localFile == localFile;
 
   @override
-  int get hashCode => localFile.path.hashCode;
+  @mustBeOverridden
+  int get hashCode => localFile.hashCode;
 }

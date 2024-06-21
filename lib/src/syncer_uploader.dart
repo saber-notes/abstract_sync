@@ -5,10 +5,12 @@ import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 
 final class SyncerUploader<
-        SyncInterface extends AbstractSyncInterface<RemoteFile, SyncFile>,
-        SyncFile extends AbstractSyncFile<RemoteFile>,
+        SyncInterface extends AbstractSyncInterface<SyncFile, LocalFile,
+            RemoteFile>,
+        SyncFile extends AbstractSyncFile<LocalFile, RemoteFile>,
+        LocalFile extends Object,
         RemoteFile extends Object>
-    extends SyncerComponent<SyncInterface, SyncFile, RemoteFile> {
+    extends SyncerComponent<SyncInterface, SyncFile, LocalFile, RemoteFile> {
   SyncerUploader({
     required super.syncer,
     required super.pending,
@@ -29,6 +31,11 @@ final class SyncerUploader<
   @override
   @protected
   Future<void> transfer(SyncFile file) async {
-    await syncer.interface.uploadFile(file);
+    final localBytes = await syncer.localMutex.protect(
+      () => syncer.interface.readLocalFile(file.localFile),
+    );
+    await syncer.remoteMutex.protect(
+      () => syncer.interface.uploadRemoteFile(file.remoteFile, localBytes),
+    );
   }
 }
