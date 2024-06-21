@@ -6,7 +6,7 @@ import 'package:meta/meta.dart';
 import 'package:mutex/mutex.dart';
 
 @immutable
-abstract final class Syncer<
+final class Syncer<
     SyncInterface extends AbstractSyncInterface<RemoteFile, SyncFile>,
     SyncFile extends AbstractSyncFile<RemoteFile>,
     RemoteFile extends Object> {

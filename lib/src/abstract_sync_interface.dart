@@ -10,7 +10,7 @@ import 'package:meta/meta.dart';
 /// Your class must be const, so if you need to keep state,
 /// use static fields.
 @immutable
-abstract interface class AbstractSyncInterface<RemoteFile extends Object,
+abstract class AbstractSyncInterface<RemoteFile extends Object,
     SyncFile extends AbstractSyncFile<RemoteFile>> {
   /// Creates an instance of the sync interface.
   const AbstractSyncInterface();
