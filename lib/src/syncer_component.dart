@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 
 import 'package:abstract_sync/src/abstract_sync_interface.dart';
 import 'package:abstract_sync/src/sync_file.dart';
@@ -20,14 +21,14 @@ abstract class SyncerComponent<
   final Syncer<SyncInterface, SyncFile, LocalFile, RemoteFile> syncer;
 
   @protected
-  final Set<SyncFile> _pending = {};
+  final _pending = Queue<SyncFile>();
 
   final Logger log;
 
   /// A stream that emits an event when a file has been transferred.
   Stream<SyncFile> get transferStream => _transferStreamController.stream;
   final _transferStreamController = StreamController<SyncFile>.broadcast();
-  void _addToTransferStream(SyncFile file) {
+  void _emitTransferStream(SyncFile file) {
     if (!_transferStreamController.hasListener) return;
     _transferStreamController.add(file);
   }
@@ -36,7 +37,7 @@ abstract class SyncerComponent<
   /// added or removed from the pending queue.
   Stream<void> get queueStream => _queueStreamController.stream;
   final _queueStreamController = StreamController<void>.broadcast();
-  void _addToQueueStream() {
+  void _emitQueueStream() {
     if (!_queueStreamController.hasListener) return;
     _queueStreamController.add(null);
   }
@@ -70,15 +71,22 @@ abstract class SyncerComponent<
     syncFile ??= localFile != null
         ? await syncer.interface.getSyncFileFromLocalFile(localFile)
         : await syncer.interface.getSyncFileFromRemoteFile(remoteFile!);
+    if (isPending(syncFile)) return false;
 
-    // If the file is already pending, don't add it again.
-    if (!_pending.add(syncFile)) return false;
-    _addToQueueStream();
+    _pending.addLast(syncFile);
+    _emitQueueStream();
 
     // Start transferring the file if no other transfers are running.
     unawaited(_transferWrapper(_pending.first));
 
     return true;
+  }
+
+  /// Moves a file to the front of the queue.
+  void bringToFront(SyncFile file) {
+    if (!isPending(file)) throw StateError('File is not pending: $file');
+    _pending.remove(file);
+    _pending.addFirst(file);
   }
 
   /// Removes a file from the queue.
@@ -105,7 +113,7 @@ abstract class SyncerComponent<
 
     if (syncFile == null) return false;
     if (!_pending.remove(syncFile)) return false;
-    _addToQueueStream();
+    _emitQueueStream();
     return true;
   }
 
@@ -136,8 +144,8 @@ abstract class SyncerComponent<
         // File was successfully transferred.
         log.info('Transfer complete: $file');
         _pending.remove(file);
-        _addToQueueStream();
-        _addToTransferStream(file);
+        _emitTransferStream(file);
+        _emitQueueStream();
       }
     } finally {
       isTransferring = false;
