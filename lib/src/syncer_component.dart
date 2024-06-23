@@ -42,6 +42,9 @@ abstract class SyncerComponent<
   }
 
   int get numPending => _pending.length;
+  bool get pendingEmpty => _pending.isEmpty;
+  bool get pendingNotEmpty => _pending.isNotEmpty;
+  void clearPending() => _pending.clear();
   bool isPending(SyncFile file) => _pending.contains(file);
   bool isLocalFilePending(LocalFile file) => _pending.any((element) =>
       syncer.interface.areLocalFilesEqual(element.localFile, file));
