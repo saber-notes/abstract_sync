@@ -11,7 +11,7 @@ abstract class SyncerComponent<
         RemoteFile>,
     SyncFile extends AbstractSyncFile<LocalFile, RemoteFile>,
     LocalFile extends Object,
-    RemoteFile extends Object> with ChangeNotifier {
+    RemoteFile extends Object> {
   SyncerComponent({
     required this.syncer,
     required this.log,
@@ -24,6 +24,24 @@ abstract class SyncerComponent<
 
   final Logger log;
 
+  /// A stream that emits an event when a file has been transferred.
+  Stream<SyncFile> get transferStream => _transferStreamController.stream;
+  final _transferStreamController = StreamController<SyncFile>.broadcast();
+  void _addToTransferStream(SyncFile file) {
+    if (!_transferStreamController.hasListener) return;
+    _transferStreamController.add(file);
+  }
+
+  /// A stream that emits an event when a file has been
+  /// added or removed from the pending queue.
+  Stream<void> get queueStream => _queueStreamController.stream;
+  final _queueStreamController = StreamController<void>.broadcast();
+  void _addToQueueStream() {
+    if (!_queueStreamController.hasListener) return;
+    _queueStreamController.add(null);
+  }
+
+  int get numPending => _pending.length;
   bool isPending(SyncFile file) => _pending.contains(file);
   bool isLocalFilePending(LocalFile file) => _pending.any((element) =>
       syncer.interface.areLocalFilesEqual(element.localFile, file));
@@ -52,7 +70,7 @@ abstract class SyncerComponent<
 
     // If the file is already pending, don't add it again.
     if (!_pending.add(syncFile)) return false;
-    notifyListeners();
+    _addToQueueStream();
 
     // Start transferring the file if no other transfers are running.
     unawaited(_transferWrapper(_pending.first));
@@ -84,7 +102,7 @@ abstract class SyncerComponent<
 
     if (syncFile == null) return false;
     if (!_pending.remove(syncFile)) return false;
-    notifyListeners();
+    _addToQueueStream();
     return true;
   }
 
@@ -115,7 +133,8 @@ abstract class SyncerComponent<
         // File was successfully transferred.
         log.info('Transfer complete: $file');
         _pending.remove(file);
-        notifyListeners();
+        _addToQueueStream();
+        _addToTransferStream(file);
       }
     } finally {
       isTransferring = false;
