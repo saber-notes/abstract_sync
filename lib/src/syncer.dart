@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:abstract_sync/src/abstract_sync_interface.dart';
 import 'package:abstract_sync/src/sync_file.dart';
 import 'package:abstract_sync/src/syncer_downloader.dart';
@@ -12,7 +14,12 @@ final class Syncer<
     SyncFile extends AbstractSyncFile<LocalFile, RemoteFile>,
     LocalFile extends Object,
     RemoteFile extends Object> {
-  Syncer(this.interface);
+  Syncer(this.interface) {
+    Future.delayed(Duration.zero, () async {
+      await uploader.refresh();
+      await downloader.refresh();
+    });
+  }
 
   final SyncInterface interface;
 
