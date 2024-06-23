@@ -13,7 +13,7 @@ final class SyncerDownloader<
     extends SyncerComponent<SyncInterface, SyncFile, LocalFile, RemoteFile> {
   SyncerDownloader({
     required super.syncer,
-    required super.pending,
+    required super.initialQueue,
   }) : super(
           log: Logger('SyncerDownloader'),
         );

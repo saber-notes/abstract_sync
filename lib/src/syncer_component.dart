@@ -14,21 +14,27 @@ abstract class SyncerComponent<
     RemoteFile extends Object> with ChangeNotifier {
   SyncerComponent({
     required this.syncer,
-    required this.pending,
+    Iterable<SyncFile>? initialQueue,
     required this.log,
-  });
+  }) {
+    if (initialQueue != null) {
+      for (final file in initialQueue) {
+        enqueue(syncFile: file);
+      }
+    }
+  }
 
   final Syncer<SyncInterface, SyncFile, LocalFile, RemoteFile> syncer;
 
   @protected
-  final Set<SyncFile> pending;
+  final Set<SyncFile> _pending = {};
 
   final Logger log;
 
-  bool isPending(SyncFile file) => pending.contains(file);
-  bool isLocalFilePending(LocalFile file) => pending.any((element) =>
+  bool isPending(SyncFile file) => _pending.contains(file);
+  bool isLocalFilePending(LocalFile file) => _pending.any((element) =>
       syncer.interface.areLocalFilesEqual(element.localFile, file));
-  bool isRemoteFilePending(RemoteFile file) => pending.any((element) =>
+  bool isRemoteFilePending(RemoteFile file) => _pending.any((element) =>
       element.remoteFile != null &&
       syncer.interface.areRemoteFilesEqual(element.remoteFile!, file));
 
@@ -52,11 +58,11 @@ abstract class SyncerComponent<
         : await syncer.interface.getSyncFileFromRemoteFile(remoteFile!);
 
     // If the file is already pending, don't add it again.
-    if (!pending.add(syncFile)) return false;
+    if (!_pending.add(syncFile)) return false;
     notifyListeners();
 
     // Start transferring the file if no other transfers are running.
-    unawaited(_transferWrapper(pending.first));
+    unawaited(_transferWrapper(_pending.first));
 
     return true;
   }
@@ -72,7 +78,7 @@ abstract class SyncerComponent<
     assert(syncFile != null || localFile != null || remoteFile != null,
         'One of syncFile, localFile, or remoteFile must be provided.');
 
-    syncFile ??= pending.castNullable().firstWhere(
+    syncFile ??= _pending.castNullable().firstWhere(
           localFile != null
               ? (syncFile) => syncer.interface
                   .areLocalFilesEqual(syncFile!.localFile, localFile)
@@ -84,7 +90,7 @@ abstract class SyncerComponent<
         );
 
     if (syncFile == null) return false;
-    if (!pending.remove(syncFile)) return false;
+    if (!_pending.remove(syncFile)) return false;
     notifyListeners();
     return true;
   }
@@ -108,22 +114,22 @@ abstract class SyncerComponent<
         // If the transfer failed, re-enqueue the file.
         transferFailed = true;
         log.warning('Transfer failed: $e', e, st);
-        pending.remove(file);
+        _pending.remove(file);
         enqueue(syncFile: file);
       }
 
       if (!transferFailed) {
         // File was successfully transferred.
         log.info('Transfer complete: $file');
-        pending.remove(file);
+        _pending.remove(file);
         notifyListeners();
       }
     } finally {
       isTransferring = false;
     }
 
-    if (pending.isNotEmpty) {
-      unawaited(_transferWrapper(pending.first));
+    if (_pending.isNotEmpty) {
+      unawaited(_transferWrapper(_pending.first));
     }
   }
 

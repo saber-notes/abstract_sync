@@ -14,10 +14,9 @@ final class Syncer<
     RemoteFile extends Object> {
   Syncer(
     this.interface, {
-    Set<SyncFile>? uploadQueue,
-    Set<SyncFile>? downloadQueue,
-  })  : _uploadQueue = uploadQueue ?? {},
-        _downloadQueue = downloadQueue ?? {};
+    this.initialUploadQueue,
+    this.initialDownloadQueue,
+  });
 
   final SyncInterface interface;
 
@@ -29,13 +28,13 @@ final class Syncer<
   @internal
   final localMutex = Mutex();
 
-  final Set<SyncFile> _uploadQueue, _downloadQueue;
+  final Iterable<SyncFile>? initialUploadQueue, initialDownloadQueue;
   late final uploader = SyncerUploader(
     syncer: this,
-    pending: _uploadQueue,
+    initialQueue: initialUploadQueue,
   );
   late final downloader = SyncerDownloader(
     syncer: this,
-    pending: _downloadQueue,
+    initialQueue: initialDownloadQueue,
   );
 }
