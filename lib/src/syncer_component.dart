@@ -55,7 +55,8 @@ abstract class SyncerComponent<
     if (!pending.add(syncFile)) return false;
     notifyListeners();
 
-    await _transferWrapper(syncFile);
+    // Start transferring the file if no other transfers are running.
+    unawaited(_transferWrapper(pending.first));
 
     return true;
   }
@@ -88,23 +89,42 @@ abstract class SyncerComponent<
     return true;
   }
 
+  /// Whether [_transferWrapper] is currently running.
+  bool isTransferring = false;
   Future<void> _transferWrapper(SyncFile file) async {
     // If the file was dequeued before the transfer started, do nothing.
     if (!isPending(file)) return;
 
+    /// If another transfer is already running, do nothing.
+    if (isTransferring) return;
+
     try {
-      await transfer(file);
-    } catch (e, st) {
-      // If the transfer failed, re-enqueue the file.
-      log.warning('Transfer failed: $e', e, st);
-      pending.remove(file);
-      enqueue(syncFile: file);
+      isTransferring = true;
+
+      bool transferFailed = false;
+      try {
+        await transfer(file);
+      } catch (e, st) {
+        // If the transfer failed, re-enqueue the file.
+        transferFailed = true;
+        log.warning('Transfer failed: $e', e, st);
+        pending.remove(file);
+        enqueue(syncFile: file);
+      }
+
+      if (!transferFailed) {
+        // File was successfully transferred.
+        log.info('Transfer complete: $file');
+        pending.remove(file);
+        notifyListeners();
+      }
+    } finally {
+      isTransferring = false;
     }
 
-    // File was successfully transferred.
-    log.info('Transfer complete: $file');
-    pending.remove(file);
-    notifyListeners();
+    if (pending.isNotEmpty) {
+      unawaited(_transferWrapper(pending.first));
+    }
   }
 
   /// Checks the source file system for changes and updates the queue.
@@ -112,9 +132,10 @@ abstract class SyncerComponent<
 
   /// Transfers a file from the source to the destination.
   ///
-  /// This method should be called in the context of
-  /// `syncer.networkMutex.protect`
-  /// to prevent concurrent network operations.
+  /// When overriding this method,
+  /// be sure to use
+  /// `syncer.remoteMutex.protect` and `syncer.localMutex.protect`
+  /// to prevent concurrent operations on the remote and local file systems.
   ///
   /// This method should not remove the file from the pending queue,
   /// notify listeners, or handle errors. These are done in [_transferWrapper].
