@@ -22,8 +22,8 @@ final class SyncerUploader<
   @override
   Future<void> refresh() async {
     final updatedFiles = await syncer.interface.findLocalChanges();
-    for (final localFile in updatedFiles) {
-      enqueue(localFile: localFile);
+    for (final syncFile in updatedFiles) {
+      enqueue(syncFile: syncFile);
     }
   }
 
@@ -32,10 +32,10 @@ final class SyncerUploader<
   @protected
   Future<void> transfer(SyncFile file) async {
     final localBytes = await syncer.localMutex.protect(
-      () => syncer.interface.readLocalFile(file.localFile),
+      () => syncer.interface.readLocalFile(file),
     );
     await syncer.remoteMutex.protect(
-      () => syncer.interface.uploadRemoteFile(file.remoteFile, localBytes),
+      () => syncer.interface.uploadRemoteFile(file, localBytes),
     );
   }
 }

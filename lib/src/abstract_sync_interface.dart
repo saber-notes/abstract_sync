@@ -18,30 +18,30 @@ abstract class AbstractSyncInterface<
   const AbstractSyncInterface();
 
   /// Gets an [AbstractSyncFile] from a given local file.
-  Future<SyncFile> getSyncFileFromLocalFile(LocalFile file);
+  Future<SyncFile> getSyncFileFromLocalFile(LocalFile localFile);
 
   /// Gets an [AbstractSyncFile] from a given remote file.
-  Future<SyncFile> getSyncFileFromRemoteFile(RemoteFile file);
+  Future<SyncFile> getSyncFileFromRemoteFile(RemoteFile remoteFile);
 
   bool areRemoteFilesEqual(RemoteFile a, RemoteFile b);
 
   bool areLocalFilesEqual(LocalFile a, LocalFile b);
 
   /// Finds local changes that need to be uploaded.
-  Future<List<LocalFile>> findLocalChanges();
+  Future<List<SyncFile>> findLocalChanges();
 
   /// Finds remote changes that need to be downloaded.
-  Future<List<RemoteFile>> findRemoteChanges();
+  Future<List<SyncFile>> findRemoteChanges();
 
   /// Uploads [bytes] to [file].
-  Future<void> uploadRemoteFile(RemoteFile file, Uint8List bytes);
+  Future<void> uploadRemoteFile(SyncFile file, Uint8List bytes);
 
   /// Downloads the contents of [file].
-  Future<Uint8List> downloadRemoteFile(RemoteFile file);
+  Future<Uint8List> downloadRemoteFile(SyncFile file);
 
   /// Writes [bytes] to [file].
-  Future<void> writeLocalFile(LocalFile file, Uint8List bytes);
+  Future<void> writeLocalFile(SyncFile file, Uint8List bytes);
 
   /// Reads the contents of [file].
-  Future<Uint8List> readLocalFile(LocalFile file);
+  Future<Uint8List> readLocalFile(SyncFile file);
 }

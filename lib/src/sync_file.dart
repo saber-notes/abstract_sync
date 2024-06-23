@@ -7,7 +7,7 @@ abstract class AbstractSyncFile<LocalFile extends Object,
     required this.localFile,
   });
 
-  final RemoteFile remoteFile;
+  RemoteFile? remoteFile;
   final LocalFile localFile;
 
   @override

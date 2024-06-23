@@ -29,7 +29,8 @@ abstract class SyncerComponent<
   bool isLocalFilePending(LocalFile file) => pending.any((element) =>
       syncer.interface.areLocalFilesEqual(element.localFile, file));
   bool isRemoteFilePending(RemoteFile file) => pending.any((element) =>
-      syncer.interface.areRemoteFilesEqual(element.remoteFile, file));
+      element.remoteFile != null &&
+      syncer.interface.areRemoteFilesEqual(element.remoteFile!, file));
 
   /// Adds a file to the queue, if it is not already pending.
   ///
@@ -74,8 +75,10 @@ abstract class SyncerComponent<
           localFile != null
               ? (syncFile) => syncer.interface
                   .areLocalFilesEqual(syncFile!.localFile, localFile)
-              : (syncFile) => syncer.interface
-                  .areRemoteFilesEqual(syncFile!.remoteFile, remoteFile!),
+              : (syncFile) =>
+                  syncFile!.remoteFile != null &&
+                  syncer.interface
+                      .areRemoteFilesEqual(syncFile.remoteFile!, remoteFile!),
           orElse: () => null,
         );
 
