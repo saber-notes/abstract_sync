@@ -13,7 +13,6 @@ final class SyncerUploader<
     extends SyncerComponent<SyncInterface, SyncFile, LocalFile, RemoteFile> {
   SyncerUploader({
     required super.syncer,
-    required super.initialQueue,
   }) : super(
           log: Logger('SyncerUploader'),
         );

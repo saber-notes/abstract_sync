@@ -12,11 +12,7 @@ final class Syncer<
     SyncFile extends AbstractSyncFile<LocalFile, RemoteFile>,
     LocalFile extends Object,
     RemoteFile extends Object> {
-  Syncer(
-    this.interface, {
-    this.initialUploadQueue,
-    this.initialDownloadQueue,
-  });
+  Syncer(this.interface);
 
   final SyncInterface interface;
 
@@ -28,13 +24,6 @@ final class Syncer<
   @internal
   final localMutex = Mutex();
 
-  final Iterable<SyncFile>? initialUploadQueue, initialDownloadQueue;
-  late final uploader = SyncerUploader(
-    syncer: this,
-    initialQueue: initialUploadQueue,
-  );
-  late final downloader = SyncerDownloader(
-    syncer: this,
-    initialQueue: initialDownloadQueue,
-  );
+  late final uploader = SyncerUploader(syncer: this);
+  late final downloader = SyncerDownloader(syncer: this);
 }

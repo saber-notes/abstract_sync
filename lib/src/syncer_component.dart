@@ -14,15 +14,8 @@ abstract class SyncerComponent<
     RemoteFile extends Object> with ChangeNotifier {
   SyncerComponent({
     required this.syncer,
-    Iterable<SyncFile>? initialQueue,
     required this.log,
-  }) {
-    if (initialQueue != null) {
-      for (final file in initialQueue) {
-        enqueue(syncFile: file);
-      }
-    }
-  }
+  });
 
   final Syncer<SyncInterface, SyncFile, LocalFile, RemoteFile> syncer;
 
