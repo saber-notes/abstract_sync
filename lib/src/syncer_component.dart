@@ -133,13 +133,19 @@ abstract class SyncerComponent<
     try {
       isTransferring = true;
 
+      if (file.needsFailureTimeout) {
+        await Future.delayed(syncer.failureTimeout);
+        file.needsFailureTimeout = false;
+      }
+
       bool transferFailed = false;
       try {
         await transfer(file);
       } catch (e, st) {
         // If the transfer failed, re-enqueue the file.
-        transferFailed = true;
         log.warning('Transfer failed: $e', e, st);
+        transferFailed = true;
+        file.needsFailureTimeout = true;
         _pending.remove(file);
         enqueue(syncFile: file);
       }

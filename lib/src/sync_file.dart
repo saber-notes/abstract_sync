@@ -10,6 +10,9 @@ abstract class AbstractSyncFile<LocalFile extends Object,
   RemoteFile? remoteFile;
   final LocalFile localFile;
 
+  @internal
+  bool needsFailureTimeout = false;
+
   @override
   @mustBeOverridden
   String toString() => 'AbstractSyncFile<$RemoteFile>($localFile)';

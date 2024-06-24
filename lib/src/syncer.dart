@@ -12,9 +12,15 @@ final class Syncer<
     SyncFile extends AbstractSyncFile<LocalFile, RemoteFile>,
     LocalFile extends Object,
     RemoteFile extends Object> {
-  Syncer(this.interface);
+  Syncer(
+    this.interface, {
+    this.failureTimeout = const Duration(milliseconds: 200),
+  });
 
   final SyncInterface interface;
+
+  /// Timeout to wait for a failed operation to be retried.
+  final Duration failureTimeout;
 
   /// Mutex to prevent concurrent remote operations.
   @internal
