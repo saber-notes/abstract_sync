@@ -14,6 +14,8 @@ abstract class AbstractSyncFile<LocalFile extends Object,
   @mustBeOverridden
   String toString() => 'AbstractSyncFile<$RemoteFile>($localFile)';
 
+  /// Returns whether the other sync file is equal to this one.
+  /// This is assumed to behave like [AbstractSyncInterface.areLocalFilesEqual].
   @override
   @mustBeOverridden
   bool operator ==(Object other) =>
