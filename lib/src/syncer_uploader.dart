@@ -19,7 +19,12 @@ final class SyncerUploader<
 
   /// Finds locally changed files and updates the queue.
   @override
-  Future<void> refresh() async {
+  Future<void> refresh() => super.refresh();
+
+  /// Finds locally changed files and updates the queue.
+  @override
+  @protected
+  Future<void> doRefresh() async {
     final updatedFiles = await syncer.interface.findLocalChanges();
     for (final syncFile in updatedFiles) {
       enqueue(syncFile: syncFile);

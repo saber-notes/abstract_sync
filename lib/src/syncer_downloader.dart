@@ -19,7 +19,12 @@ final class SyncerDownloader<
 
   /// Updates the queue with remotely changed files.
   @override
-  Future<void> refresh() async {
+  Future<void> refresh() => super.refresh();
+
+  /// Updates the queue with remotely changed files.
+  @override
+  @protected
+  Future<void> doRefresh() async {
     final updatedFiles = await syncer.interface.findRemoteChanges();
     for (final syncFile in updatedFiles) {
       enqueue(syncFile: syncFile);

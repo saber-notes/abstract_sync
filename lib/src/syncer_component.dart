@@ -6,6 +6,7 @@ import 'package:abstract_sync/src/sync_file.dart';
 import 'package:abstract_sync/src/syncer.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
+import 'package:mutex/mutex.dart';
 
 abstract class SyncerComponent<
     SyncInterface extends AbstractSyncInterface<SyncFile, LocalFile,
@@ -24,6 +25,9 @@ abstract class SyncerComponent<
   final _pending = Queue<SyncFile>();
 
   final Logger log;
+
+  final Mutex _refreshMutex = Mutex();
+  bool get isRefreshing => _refreshMutex.isLocked;
 
   /// A stream that emits an event when a file has been transferred.
   Stream<SyncFile> get transferStream => _transferStreamController.stream;
@@ -157,7 +161,17 @@ abstract class SyncerComponent<
   }
 
   /// Checks the source file system for changes and updates the queue.
-  Future<void> refresh();
+  ///
+  /// This method internally calls [doRefresh] and protects it with a mutex.
+  /// You can use [isRefreshing] to check if a refresh is currently running.
+  Future<void> refresh() => _refreshMutex.protect(doRefresh);
+
+  /// Checks the source file system for changes and updates the queue.
+  ///
+  /// When overriding this method, do not use a mutex as this
+  /// is handled in [refresh].
+  @protected
+  Future<void> doRefresh();
 
   /// Transfers a file from the source to the destination.
   ///
