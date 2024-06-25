@@ -4,8 +4,8 @@ import 'dart:collection';
 import 'package:abstract_sync/src/abstract_sync_interface.dart';
 import 'package:abstract_sync/src/sync_file.dart';
 import 'package:abstract_sync/src/syncer.dart';
-import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
+import 'package:meta/meta.dart';
 import 'package:mutex/mutex.dart';
 
 abstract class SyncerComponent<
