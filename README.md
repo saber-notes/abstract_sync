@@ -11,7 +11,9 @@ There is a bit of setup required for this package due to its abstract nature.
 You can do all of the following in a single file (e.g. `my_syncer.dart`)
 or organize it however you like.
 
-You can see a real-world example in
+You can view a simple example of this in the
+[example](example/main.dart) file,
+or see a real-world example in
 [Saber's `saber_syncer.dart`](https://github.com/saber-notes/saber/blob/main/lib/data/nextcloud/saber_syncer.dart),
 which has added functionality for encryption and caching.
 
