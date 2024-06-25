@@ -1,5 +1,5 @@
 name: abstract_sync
-description: A framework for writing your own syncing solution.
+description: A framework for writing your own syncing solution between any two sources.
 version: 1.0.0
 homepage: https://github.com/saber-notes/abstract_sync
 
