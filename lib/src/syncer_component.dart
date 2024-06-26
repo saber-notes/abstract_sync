@@ -24,6 +24,11 @@ abstract class SyncerComponent<
   @protected
   final _pending = Queue<SyncFile>();
 
+  /// A read-only copy of the pending queue.
+  ///
+  /// Also see [isPending], [numPending], [pendingEmpty], and [pendingNotEmpty].
+  Iterable<SyncFile> get pending => _pending.map((e) => e);
+
   final Logger log;
 
   final Mutex _refreshMutex = Mutex();
