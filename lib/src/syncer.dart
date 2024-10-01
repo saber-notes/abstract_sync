@@ -14,7 +14,7 @@ final class Syncer<
     RemoteFile extends Object> {
   Syncer(
     this.interface, {
-    this.failureTimeout = const Duration(milliseconds: 200),
+    this.failureTimeout = const Duration(seconds: 1),
   });
 
   final SyncInterface interface;

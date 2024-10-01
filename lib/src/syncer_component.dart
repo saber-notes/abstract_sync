@@ -85,8 +85,7 @@ abstract class SyncerComponent<
     _pending.addLast(syncFile);
     _emitQueueStream();
 
-    // Start transferring the file if no other transfers are running.
-    unawaited(_transferWrapper(_pending.first));
+    transferNext();
 
     return true;
   }
@@ -138,11 +137,6 @@ abstract class SyncerComponent<
     try {
       isTransferring = true;
 
-      if (file.needsFailureTimeout) {
-        await Future.delayed(syncer.failureTimeout);
-        file.needsFailureTimeout = false;
-      }
-
       bool transferFailed = false;
       try {
         await transfer(file);
@@ -150,9 +144,17 @@ abstract class SyncerComponent<
         // If the transfer failed, re-enqueue the file.
         log.warning('Transfer failed: $e', e, st);
         transferFailed = true;
-        file.needsFailureTimeout = true;
         _pending.remove(file);
-        enqueue(syncFile: file);
+
+        if (_failureTimeoutLengths.containsKey(file)) {
+          _failureTimeoutLengths[file] = _failureTimeoutLengths[file]! * 2;
+        } else {
+          _failureTimeoutLengths[file] = syncer.failureTimeout;
+        }
+        _failureTimeouts[file] = Timer(
+          _failureTimeoutLengths[file]!,
+          () => enqueue(syncFile: file),
+        );
       }
 
       if (!transferFailed) {
@@ -166,9 +168,42 @@ abstract class SyncerComponent<
       isTransferring = false;
     }
 
-    if (_pending.isNotEmpty) {
-      unawaited(_transferWrapper(_pending.first));
+    transferNext();
+  }
+
+  /// Start transferring a file if no other transfers are running.
+  void transferNext() {
+    if (isTransferring) return;
+    if (_pending.isEmpty) return;
+    unawaited(_transferWrapper(_pending.first));
+  }
+
+  /// When a file transfer fails, a Timer is started to add it back to the queue
+  /// in increasingly long intervals (defined in [_failureTimeoutLengths]).
+  ///
+  /// This map keeps track of the Timers for each file,
+  /// so they can be cancelled in [dispose].
+  final _failureTimeouts = <SyncFile, Timer>{};
+
+  /// The duration to wait before re-enqueuing a failed transfer
+  /// for a given file.
+  ///
+  /// This begins at [Syncer.failureTimeout] and doubles each time
+  /// the transfer fails again.
+  final _failureTimeoutLengths = <SyncFile, Duration>{};
+
+  /// Cancels any further transfers and clears [_failureTimeouts].
+  ///
+  /// This is not permanent and the queue is maintained.
+  /// You can undo [dispose] and resume transfers
+  /// by calling [transferNext], [refresh], or [enqueue].
+  /// However, any failed transfers will be not be retried.
+  void dispose() {
+    for (final timer in _failureTimeouts.values) {
+      timer.cancel();
     }
+    _failureTimeouts.clear();
+    _failureTimeoutLengths.clear();
   }
 
   /// Checks the source file system for changes and updates the queue.
