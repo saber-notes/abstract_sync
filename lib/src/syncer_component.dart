@@ -75,7 +75,9 @@ abstract class SyncerComponent<
 
     if ((syncFile != null && isPending(syncFile)) ||
         (localFile != null && isLocalFilePending(localFile)) ||
-        (remoteFile != null && isRemoteFilePending(remoteFile))) return false;
+        (remoteFile != null && isRemoteFilePending(remoteFile))) {
+      return false;
+    }
 
     syncFile ??= localFile != null
         ? await syncer.interface.getSyncFileFromLocalFile(localFile)
