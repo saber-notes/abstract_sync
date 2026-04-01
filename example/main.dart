@@ -24,7 +24,7 @@ void main() async {
   syncer.downloader.enqueue(remoteFile: File('remote/file.txt'));
 
   // Bring a file to the front of the queue
-  syncer.downloader.bringToFront(await const MySyncInterface()
+  syncer.downloader.bringToFront(await syncer.interface
       .getSyncFileFromRemoteFile(File('remote/file.txt')));
 
   // Check if there are files uploading

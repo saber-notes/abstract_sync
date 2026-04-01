@@ -1,3 +1,7 @@
+## 1.3.2
+
+- Fixed queueStream not being notified when a failed file is removed from the queue.
+
 ## 1.3.1
 
 - pub.dev score improvement by fixing a lint issue
