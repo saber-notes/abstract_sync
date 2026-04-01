@@ -147,6 +147,7 @@ abstract class SyncerComponent<
         log.warning('Transfer failed: $e', e, st);
         transferFailed = true;
         _pending.remove(file);
+        _emitQueueStream();
 
         if (_failureTimeoutLengths.containsKey(file)) {
           _failureTimeoutLengths[file] = _failureTimeoutLengths[file]! * 2;
