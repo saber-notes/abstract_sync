@@ -19,7 +19,10 @@ final class Syncer<
 
   final SyncInterface interface;
 
-  /// Timeout to wait for a failed operation to be retried.
+  /// When an upload/download fails, it will be retried after this duration.
+  ///
+  /// We use exponential backoff, so the duration is doubled
+  /// on a given file each time it fails to sync.
   final Duration failureTimeout;
 
   /// Mutex to prevent concurrent remote operations.
